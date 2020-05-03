@@ -1,6 +1,6 @@
 mod migration_0_initial;
 
-use sqlx::{PgPool, Row};
+use sqlx::{postgres::PgRow, prelude::*, PgPool};
 use std::collections::HashSet;
 
 #[derive(Default, Clone)]
@@ -89,23 +89,19 @@ impl Migration {
     }
 
     pub async fn run_all(
-        pool: &mut PgPool,
+        pool: &PgPool,
         mut supplied_migrations: Vec<Migration>,
     ) -> Result<(), MigrationError> {
         let mut migrations = vec![migration_0_initial::migration()];
         migrations.append(&mut supplied_migrations);
         let mut performed_migrations: HashSet<String> = HashSet::new();
-        match sqlx::query("SELECT name FROM migrations")
+        sqlx::query("SELECT name FROM migrations")
+            .map(|row: PgRow| {
+                performed_migrations.insert(row.get("name"));
+            })
             .fetch_all(pool)
             .await
-        {
-            Ok(rows) => {
-                for row in rows {
-                    performed_migrations.insert(row.get("name"));
-                }
-            }
-            Err(_) => {}
-        }
+            .unwrap_or_default();
 
         if let Some(_) = migrations.iter().find(|m| Mode::NuclearDebug == m.mode) {
             // If any migration is nuclear, roll everything back, then execute all the migraitons again
