@@ -2,8 +2,10 @@ mod migration_0_initial;
 
 use sqlx::{postgres::PgRow, prelude::*, PgPool};
 use std::collections::HashSet;
+use thiserror::Error;
 
 #[derive(Default, Clone)]
+/// A single database migration
 pub struct Migration {
     pub name: String,
     pub up: Vec<String>,
@@ -11,17 +13,23 @@ pub struct Migration {
     pub mode: Mode,
 }
 
-use thiserror::Error;
 #[derive(Error, Debug)]
+/// An error executing a migration
 pub struct MigrationError {
     pub statement: String,
     pub error: sqlx::Error,
 }
 
 #[derive(PartialEq, Clone)]
+/// The migration's execution mode
 pub enum Mode {
+    /// The migration is stable and ready for deployment
     Stable,
+    /// The migration is still being worked on and should not be deployed
     Debug,
+    /// The migration is still being worked on and should not be deployed. This
+    /// mode is mostly used to test complex migrations that alter existing
+    /// structures to ensure the entire migration is re-playable
     NuclearDebug,
 }
 
@@ -57,6 +65,11 @@ impl Display for MigrationError {
 }
 
 impl Migration {
+    /// Create an empty migration. `name` is used as a unique key to check if
+    /// the migration has been completed already. If you are using
+    /// `std::file!()` make sure to not change your build paths between
+    /// deployments, or normalize the paths before passing them in as the
+    /// migration name.
     pub fn new(name: &str) -> Self {
         Migration {
             name: name.to_owned(),
@@ -64,16 +77,19 @@ impl Migration {
         }
     }
 
+    /// Add an "Up" sql statement that is performed when applying the migration
     pub fn with_up(mut self, up: &str) -> Self {
         self.up.push(up.to_owned());
         self
     }
 
+    /// Add a "Down" sql statement that is performed when rolling a migration back
     pub fn with_down(mut self, down: &str) -> Self {
         self.down.insert(0, down.to_owned());
         self
     }
 
+    /// Mark this migration as executing in debug mode. Will panic if `#[cfg(not(debug_assertions))]`
     pub fn debug(mut self) -> Self {
         #[cfg(not(debug_assertions))]
         panic!("Debug migration turned on");
@@ -81,6 +97,7 @@ impl Migration {
         self
     }
 
+    /// Mark this migration as executing in "nuclear" debug mode, forcing all migrations to-rerun. Will panic if `#[cfg(not(debug_assertions))]`
     pub fn nuclear_debug(mut self) -> Self {
         #[cfg(not(debug_assertions))]
         panic!("Debug migration turned on");
@@ -88,6 +105,7 @@ impl Migration {
         self
     }
 
+    /// Execute all of the migrations against the PgPool provided.
     pub async fn run_all(
         pool: &PgPool,
         mut supplied_migrations: Vec<Migration>,
@@ -103,7 +121,10 @@ impl Migration {
             .await
             .unwrap_or_default();
 
-        if let Some(_) = migrations.iter().find(|m| Mode::NuclearDebug == m.mode) {
+        if matches!(
+            migrations.iter().find(|m| Mode::NuclearDebug == m.mode),
+            Some(_)
+        ) {
             // If any migration is nuclear, roll everything back, then execute all the migraitons again
             let mut reverse_migrations = migrations.clone();
             reverse_migrations.reverse();

@@ -1,6 +1,6 @@
 use super::Migration;
 
-pub const NAME: &'static str = "initial";
+pub const NAME: &str = "initial";
 
 pub fn migration() -> Migration {
     Migration::new(NAME)

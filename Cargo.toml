@@ -1,15 +1,19 @@
 [package]
 name = "sqlx-simple-migrator"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Jonathan Johnson <jon@khonsulabs.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "A very simple migration framework for sqlx and postgres"
+readme = "./README.md"
+license = "MIT"
+keywords = ["migration", "sqlx", "postgres"]
+categories = ["database"]
+repository = "https://github.com/khonsulabs/sqlx-simple-migrator"
 
 [dependencies]
-thiserror="1"
+thiserror = "1"
 
 [dependencies.sqlx]
 version = "0.3"
 default-features = false
-features = [ "runtime-tokio", "macros" , "postgres", "uuid", "chrono",  "tls" ]
+features = ["runtime-tokio", "macros", "postgres", "uuid", "chrono", "tls"]
