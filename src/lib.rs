@@ -189,3 +189,14 @@ impl Migration {
         Ok(())
     }
 }
+
+#[macro_export]
+/// Returns the last path component from std::file!()
+macro_rules! migration_name {
+    () => {
+        ::std::file!()
+            .split(std::path::MAIN_SEPARATOR)
+            .last()
+            .unwrap()
+    };
+}

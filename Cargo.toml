@@ -1,6 +1,6 @@
 [package]
 name = "sqlx-simple-migrator"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Jonathan Johnson <jon@khonsulabs.com>"]
 edition = "2018"
 description = "A very simple migration framework for sqlx and postgres"
@@ -12,8 +12,10 @@ repository = "https://github.com/khonsulabs/sqlx-simple-migrator"
 
 [dependencies]
 thiserror = "1"
-
-[dependencies.sqlx]
-version = "0.4"
-default-features = false
-features = ["macros", "postgres", "runtime-tokio-rustls", "uuid", "chrono"]
+sqlx = { version = "0.4", default-features = false, features = [
+    "macros",
+    "postgres",
+    "runtime-tokio-rustls",
+    "uuid",
+    "chrono"
+] }
