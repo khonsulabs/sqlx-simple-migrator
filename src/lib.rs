@@ -152,6 +152,34 @@ impl Migration {
         Ok(())
     }
 
+    /// Run the down scripts to undo all the migrations
+    pub async fn undo_all(
+        pool: &PgPool,
+        mut supplied_migrations: Vec<Migration>,
+    ) -> Result<(), MigrationError> {
+        let mut migrations = vec![migration_0_initial::migration()];
+        migrations.append(&mut supplied_migrations);
+        let mut performed_migrations: HashSet<String> = HashSet::new();
+        sqlx::query("SELECT name FROM migrations")
+            .map(|row: PgRow| {
+                performed_migrations.insert(row.get("name"));
+            })
+            .fetch_all(pool)
+            .await
+            .unwrap_or_default();
+
+        // Undo them in reverse order
+        migrations.reverse();
+        for migration in migrations
+            .into_iter()
+            .filter(|m| performed_migrations.contains(&m.name))
+        {
+            migration.undo(&pool).await?;
+        }
+
+        Ok(())
+    }
+
     async fn perform(&self, db: &PgPool) -> Result<(), MigrationError> {
         let mut tx = migration_try!(db.begin().await, "BEGIN TRANSACTION");
         println!("Performing {}", self.name);

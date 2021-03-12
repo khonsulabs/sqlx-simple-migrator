@@ -1,6 +1,6 @@
 [package]
 name = "sqlx-simple-migrator"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Jonathan Johnson <jon@khonsulabs.com>"]
 edition = "2018"
 description = "A very simple migration framework for sqlx and postgres"
@@ -17,5 +17,5 @@ sqlx = { version = "0.5", default-features = false, features = [
     "postgres",
     "runtime-tokio-rustls",
     "uuid",
-    "chrono"
+    "chrono",
 ] }
